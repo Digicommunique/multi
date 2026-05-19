@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user including customers, admins, and riders",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin", "branch_manager", "rider"] },
+        "phoneNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "branchId": { "type": "string", "description": "For branch managers and riders" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Branch": {
+      "title": "Branch",
+      "description": "A physical store location",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "location": { "type": "object", "description": "Geo-coordinates" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "deliveryRadius": { "type": "number", "description": "In KM" }
+      },
+      "required": ["name", "address", "city"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A specific product available in the mart",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "compareAtPrice": { "type": "number" },
+        "category": { "type": "string" },
+        "brand": { "type": "string" },
+        "images": { "type": "array" },
+        "unit": { "type": "string", "description": "kg, pc, l" },
+        "weight": { "type": "string" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "Inventory": {
+      "title": "Inventory",
+      "description": "Stock levels for a product at a specific branch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "branchId_productId" },
+        "branchId": { "type": "string" },
+        "productId": { "type": "string" },
+        "stock": { "type": "number" },
+        "status": { "type": "string", "enum": ["in_stock", "out_of_stock", "low_stock"] }
+      },
+      "required": ["branchId", "productId", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "branchId": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "processing", "out_for_delivery", "delivered", "cancelled"] },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "failed"] },
+        "deliveryAddress": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "riderId": { "type": "string" }
+      },
+      "required": ["userId", "branchId", "items", "total", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "branches/{branchId}": {
+      "schema": "Branch",
+      "description": "Branch details"
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories"
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Product catalog"
+    },
+    "inventory/{inventoryId}": {
+      "schema": "Inventory",
+      "description": "Branch-specific stock sync"
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Order records"
+    }
+  }
+}

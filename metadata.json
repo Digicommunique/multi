@@ -1,0 +1,6 @@
+{
+  "name": "Martly: Multi-Branch Quick Commerce",
+  "description": "A comprehensive hyperlocal quick commerce platform featuring multi-branch inventory, real-time tracking, and AI-powered recommendations.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
