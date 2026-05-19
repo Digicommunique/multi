@@ -1,14 +1,16 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 // Mock Database
@@ -41,6 +43,10 @@ const products = [
   // Beverages
   { id: "p7", name: "Cold Brew Coffee", price: 400, image: "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=400&q=80", category: "cat-4", brand: "BrewMaster", unit: "250ml", stock: 60 },
   { id: "p8", name: "Green Tea Multipack", price: 650, image: "https://images.unsplash.com/photo-1582793988951-9aed5509eb97?w=400&q=80", category: "cat-4", brand: "ZenLeaf", unit: "20 bags", stock: 40 },
+  { id: "p9", name: "Organic Bananas", price: 80, image: "https://images.unsplash.com/photo-1603833665858-e81b1c7e4460?w=400&q=80", category: "cat-2", brand: "FarmDirect", unit: "1kg", stock: 120 },
+  { id: "p10", name: "Dark Chocolate 70%", price: 299, image: "https://images.unsplash.com/photo-1511381939415-e44015466834?w=400&q=80", category: "cat-1", brand: "CocoaGolds", unit: "100g", stock: 75 },
+  { id: "p11", name: "Wireless Headphones", price: 2499, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80", category: "cat-6", brand: "AudioZen", unit: "1pc", stock: 15 },
+  { id: "p12", name: "Smart Watch S3", price: 5999, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80", category: "cat-6", brand: "TechCore", unit: "1pc", stock: 10 },
 ];
 
 const orders: any[] = [];

@@ -24,7 +24,16 @@ import {
   Smartphone,
   Home,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Facebook,
+  Twitter,
+  Instagram,
+  Youtube,
+  Github,
+  Award,
+  Truck,
+  Leaf,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Branch, Category, Product, CartItem, Order, AdminStats } from './types';
@@ -37,23 +46,43 @@ const ICON_MAP: Record<string, any> = {
 export default function App() {
   const [view, setView] = useState<'shop' | 'admin'>('shop');
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(() => {
+    const saved = localStorage.getItem('martly_branch');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('martly_cart');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
-
-  // Admin State
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
 
+  // Persistence
   useEffect(() => {
-    fetchBranches();
-    fetchCategories();
+    localStorage.setItem('martly_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    if (selectedBranch) {
+      localStorage.setItem('martly_branch', JSON.stringify(selectedBranch));
+    }
+  }, [selectedBranch]);
+
+  useEffect(() => {
+    const init = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchBranches(), fetchCategories()]);
+      setIsLoading(false);
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -194,7 +223,12 @@ export default function App() {
       <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="flex cursor-pointer flex-col" onClick={() => setView('shop')}>
+            <div className="flex cursor-pointer flex-col" onClick={() => {
+              setView('shop');
+              setSelectedCategory(null);
+              setSearchQuery('');
+              setAiSuggestions([]);
+            }}>
               <div className="text-2xl font-black tracking-tighter text-brand-navy">MART.OS</div>
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Enterprise Edition</div>
             </div>
@@ -252,7 +286,13 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {orderComplete && (
+        {isLoading && (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-brand-green"></div>
+          </div>
+        )}
+        
+        {!isLoading && orderComplete && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -273,6 +313,68 @@ export default function App() {
 
         {view === 'shop' ? (
           <>
+            {/* Hero Section */}
+            {!selectedCategory && !searchQuery && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative mb-12 overflow-hidden rounded-[32px] bg-brand-navy p-8 h-[300px] flex flex-col justify-center sm:p-12"
+              >
+                <div className="absolute right-0 top-0 h-full w-1/3 opacity-20 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-l from-brand-green/30 to-transparent" />
+                  <ShoppingBasket className="absolute -right-8 top-1/2 -translate-y-1/2 h-64 w-64 rotate-12" />
+                </div>
+                
+                <div className="relative z-10 max-w-xl">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-green/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-brand-green border border-brand-green/30">
+                    <Clock className="h-3 w-3" />
+                    Ultrafast Delivery
+                  </div>
+                  <h1 className="mb-4 text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl">
+                    Groceries in <span className="text-brand-green">12 Minutes</span>.
+                  </h1>
+                  <p className="mb-8 text-sm font-medium text-slate-400 max-w-md">
+                    Fresh produce, household essentials, and electronics delivered 
+                    from your local Mumbai hubs before your coffee gets cold.
+                  </p>
+                  <div className="flex gap-4">
+                    <button className="rounded-2xl bg-brand-green px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-navy shadow-lg shadow-green-400/20 active:scale-95 transition-transform">
+                      Order Now
+                    </button>
+                    <button className="rounded-2xl border-2 border-slate-700 px-8 py-4 text-xs font-black uppercase tracking-widest text-white hover:bg-slate-800 transition-colors">
+                      View Offers
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Sub-Banners */}
+            {!selectedCategory && !searchQuery && (
+              <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="group relative overflow-hidden rounded-3xl bg-amber-100 p-8 flex items-center justify-between border border-amber-200">
+                  <div className="z-10">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Seasonal Collection</div>
+                    <h3 className="text-2xl font-black text-amber-900 mb-4">Summer Fruits</h3>
+                    <button className="flex items-center gap-2 text-xs font-black uppercase text-amber-900">
+                      Shop Now <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <Apple className="h-20 w-20 text-amber-300 absolute -right-4 -bottom-4 rotate-12 transition-transform group-hover:scale-125" />
+                </div>
+                <div className="group relative overflow-hidden rounded-3xl bg-blue-100 p-8 flex items-center justify-between border border-blue-200">
+                  <div className="z-10">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Tech Express</div>
+                    <h3 className="text-2xl font-black text-blue-900 mb-4">Mobile Hub</h3>
+                    <button className="flex items-center gap-2 text-xs font-black uppercase text-blue-900">
+                      Explore <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <Smartphone className="h-20 w-20 text-blue-300 absolute -right-4 -bottom-4 rotate-12 transition-transform group-hover:scale-125" />
+                </div>
+              </div>
+            )}
+
             {/* Categories */}
             <div className="mb-12 overflow-x-auto pb-4 scrollbar-none">
               <div className="flex gap-6">
@@ -342,6 +444,59 @@ export default function App() {
               <div className="flex flex-col items-center justify-center py-32">
                 <Search className="h-16 w-16 mb-6 text-slate-200" />
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Inventory Sync Fault: Zero Results</p>
+              </div>
+            )}
+
+            {/* Brands Marquee */}
+            {!selectedCategory && !searchQuery && (
+              <div className="mt-20 border-y border-slate-100 py-10">
+                <div className="text-center mb-8">
+                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Global Partners</div>
+                  <h2 className="text-2xl font-black tracking-tighter text-brand-navy">Trusted by Industry Titans</h2>
+                </div>
+                <div className="flex flex-wrap justify-center gap-12 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+                  <div className="text-xl font-black tracking-tighter">APPLE</div>
+                  <div className="text-xl font-black tracking-tighter">NESTLE</div>
+                  <div className="text-xl font-black tracking-tighter">PEPSICO</div>
+                  <div className="text-xl font-black tracking-tighter">PROCTER & GAMBLE</div>
+                  <div className="text-xl font-black tracking-tighter">HUL</div>
+                  <div className="text-xl font-black tracking-tighter">SAMSUNG</div>
+                </div>
+              </div>
+            )}
+
+            {/* Value Props Section */}
+            {!selectedCategory && !searchQuery && (
+              <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                <ValueCard icon={<Truck />} title="Zero Lag Delivery" desc="Proprietary logistics engine ensures <12 min delivery." />
+                <ValueCard icon={<ShieldCheck />} title="Verified Quality" desc="Every SKU passes a rigorous 15-point audit." />
+                <ValueCard icon={<Award />} title="Direct Supply" desc="Straight from manufacturers to our hubs." />
+                <ValueCard icon={<Leaf />} title="Eco Logistics" desc="100% EV fleet for carbon-neutral transport." />
+              </div>
+            )}
+
+            {/* Newsletter Section */}
+            {!selectedCategory && !searchQuery && (
+              <div className="mt-32 rounded-[40px] bg-brand-navy p-12 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                   <div className="absolute top-0 left-1/4 w-px h-full bg-white" />
+                   <div className="absolute top-0 right-1/4 w-px h-full bg-white" />
+                </div>
+                <div className="relative z-10 max-w-2xl mx-auto">
+                   <div className="mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-brand-green">Inteligence Network</div>
+                   <h2 className="text-4xl font-black tracking-tighter text-white mb-6">Gain the Tactical Edge</h2>
+                   <p className="text-slate-400 mb-8 font-medium">Join 50,000+ users receiving exclusive drop alerts and stock updates directly to their hub.</p>
+                   <div className="flex max-w-md mx-auto gap-3">
+                      <input 
+                        type="email" 
+                        placeholder="TERMINAL@EMAIL.COM" 
+                        className="flex-1 rounded-2xl bg-white/5 border border-white/10 px-6 py-4 text-xs font-black uppercase tracking-widest text-white focus:outline-none focus:border-brand-green"
+                      />
+                      <button className="rounded-2xl bg-brand-green px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-navy active:scale-95 transition-transform">
+                        Sync
+                      </button>
+                   </div>
+                </div>
               </div>
             )}
           </>
@@ -443,6 +598,65 @@ export default function App() {
         )}
       </main>
 
+      {/* Footer */}
+      <footer className="mt-32 border-t border-slate-200 bg-white pt-20 pb-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 mb-20">
+            <div>
+              <div className="text-2xl font-black tracking-tighter text-brand-navy mb-4">MART.OS</div>
+              <p className="text-sm font-medium text-slate-500 mb-6 max-w-xs">
+                The next-generation hyperlocal fulfillment operating system. 
+                Redefining speed, scale, and supply chain integrity.
+              </p>
+              <div className="flex gap-4">
+                <SocialIcon icon={<Twitter />} />
+                <SocialIcon icon={<Facebook />} />
+                <SocialIcon icon={<Instagram />} />
+                <SocialIcon icon={<Youtube />} />
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Operations</h4>
+              <ul className="space-y-4 text-sm font-bold uppercase tracking-widest text-brand-navy/60 hover:text-brand-navy transition-colors">
+                <li><a href="#">Active Hubs</a></li>
+                <li><a href="#">Delivery Fleet</a></li>
+                <li><a href="#">Merchant Portal</a></li>
+                <li><a href="#">Real-time Logs</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Platform</h4>
+              <ul className="space-y-4 text-sm font-bold uppercase tracking-widest text-brand-navy/60 hover:text-brand-navy transition-colors">
+                <li><a href="#">API Documentation</a></li>
+                <li><a href="#">Security Hub</a></li>
+                <li><a href="#">Brand Assets</a></li>
+                <li><a href="#">Enterprise SOW</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Headquarters</h4>
+              <div className="text-sm font-medium text-slate-500">
+                <p>99 Terminal Way, BKC Hub</p>
+                <p>Mumbai, Maharashtra, 400051</p>
+                <p className="mt-4 font-black text-brand-navy">ops@mart-os.com</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 border-t border-slate-100 pt-10 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            <div>© 2026 MART.OS CORE. All rights reserved.</div>
+            <div className="flex gap-8">
+              <a href="#" className="hover:text-brand-navy">Protocol</a>
+              <a href="#" className="hover:text-brand-navy">Privacy</a>
+              <a href="#" className="hover:text-brand-navy">Nodes</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       {/* Cart Drawer */}
       <AnimatePresence>
         {isCartOpen && (
@@ -531,6 +745,24 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function ValueCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+  return (
+    <div className="flex flex-col gap-4 p-6 rounded-3xl border border-slate-100 transition-all hover:border-brand-green">
+      <div className="rounded-2xl bg-slate-50 p-4 w-fit text-brand-navy">{icon}</div>
+      <h3 className="text-sm font-black uppercase tracking-widest">{title}</h3>
+      <p className="text-sm font-medium text-slate-500 leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+function SocialIcon({ icon }: { icon: React.ReactNode }) {
+  return (
+    <a href="#" className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-brand-navy hover:text-brand-green transition-all">
+      {React.cloneElement(icon as React.ReactElement, { size: 18 })}
+    </a>
   );
 }
 
