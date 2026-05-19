@@ -30,17 +30,17 @@ const categories = [
 
 const products = [
   // Grocery
-  { id: "p1", name: "Premium Basmati Rice", price: 12.99, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80", category: "cat-1", brand: "Harvest Gold", unit: "5kg", stock: 50 },
-  { id: "p2", name: "Organic Brown Sugar", price: 4.50, image: "https://images.unsplash.com/photo-1622340322744-9387f34085e7?w=400&q=80", category: "cat-1", brand: "EcoPure", unit: "1kg", stock: 30 },
+  { id: "p1", name: "Premium Basmati Rice", price: 1250, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80", category: "cat-1", brand: "Harvest Gold", unit: "5kg", stock: 50 },
+  { id: "p2", name: "Organic Brown Sugar", price: 450, image: "https://images.unsplash.com/photo-1622340322744-9387f34085e7?w=400&q=80", category: "cat-1", brand: "EcoPure", unit: "1kg", stock: 30 },
   // Fruits
-  { id: "p3", name: "Fresh Royal Gala Apples", price: 3.99, image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6bcd6?w=400&q=80", category: "cat-2", brand: "FarmDirect", unit: "1kg", stock: 100 },
-  { id: "p4", name: "Organic Hass Avocado", price: 2.50, image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&q=80", category: "cat-2", brand: "NatureBloom", unit: "1pc", stock: 45 },
+  { id: "p3", name: "Fresh Royal Gala Apples", price: 399, image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6bcd6?w=400&q=80", category: "cat-2", brand: "FarmDirect", unit: "1kg", stock: 100 },
+  { id: "p4", name: "Organic Hass Avocado", price: 250, image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&q=80", category: "cat-2", brand: "NatureBloom", unit: "1pc", stock: 45 },
   // Dairy
-  { id: "p5", name: "Full Cream Milk", price: 1.80, image: "https://images.unsplash.com/photo-1550583724-1255818c0533?w=400&q=80", category: "cat-3", brand: "DairyFresh", unit: "1L", stock: 80 },
-  { id: "p6", name: "Artisanal Sourdough Bread", price: 5.25, image: "https://images.unsplash.com/photo-1585478286653-ef3707f1523e?w=400&q=80", category: "cat-3", brand: "Baker's Pride", unit: "500g", stock: 20 },
+  { id: "p5", name: "Full Cream Milk", price: 180, image: "https://images.unsplash.com/photo-1550583724-1255818c0533?w=400&q=80", category: "cat-3", brand: "DairyFresh", unit: "1L", stock: 80 },
+  { id: "p6", name: "Artisanal Sourdough Bread", price: 525, image: "https://images.unsplash.com/photo-1585478286653-ef3707f1523e?w=400&q=80", category: "cat-3", brand: "Baker's Pride", unit: "500g", stock: 20 },
   // Beverages
-  { id: "p7", name: "Cold Brew Coffee", price: 4.00, image: "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=400&q=80", category: "cat-4", brand: "BrewMaster", unit: "250ml", stock: 60 },
-  { id: "p8", name: "Green Tea Multipack", price: 6.50, image: "https://images.unsplash.com/photo-1582793988951-9aed5509eb97?w=400&q=80", category: "cat-4", brand: "ZenLeaf", unit: "20 bags", stock: 40 },
+  { id: "p7", name: "Cold Brew Coffee", price: 400, image: "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=400&q=80", category: "cat-4", brand: "BrewMaster", unit: "250ml", stock: 60 },
+  { id: "p8", name: "Green Tea Multipack", price: 650, image: "https://images.unsplash.com/photo-1582793988951-9aed5509eb97?w=400&q=80", category: "cat-4", brand: "ZenLeaf", unit: "20 bags", stock: 40 },
 ];
 
 const orders: any[] = [];

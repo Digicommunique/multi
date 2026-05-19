@@ -164,7 +164,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: cart,
-          total: subtotal + 1.99, // plus delivery
+          total: subtotal + 20, // plus delivery in ₹
           branchId: selectedBranch.id
         })
       });
@@ -326,7 +326,7 @@ export default function App() {
                     <div className="mb-1 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{product.brand}</div>
                     <h3 className="line-clamp-1 text-sm font-bold tracking-tight text-brand-navy mb-4">{product.name}</h3>
                     <div className="mt-auto flex items-center justify-between">
-                      <span className="text-xl font-black tracking-tighter text-brand-navy">${product.price.toFixed(2)}</span>
+                      <span className="text-xl font-black tracking-tighter text-brand-navy">₹{product.price.toFixed(2)}</span>
                       <button 
                         onClick={() => addToCart(product)}
                         className="rounded-xl bg-brand-green px-3 py-2 text-[10px] font-black uppercase tracking-widest text-brand-navy shadow-lg shadow-green-100 transition-all hover:scale-105 active:scale-95"
@@ -362,7 +362,7 @@ export default function App() {
             </header>
             
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard title="Daily Revenue" value={`$${stats?.totalSales.toFixed(2)}`} icon={<TrendingUp className="text-emerald-500" />} change="↑ 14.2%" />
+              <StatCard title="Daily Revenue" value={`₹${stats?.totalSales.toFixed(2)}`} icon={<TrendingUp className="text-emerald-500" />} change="↑ 14.2%" />
               <StatCard title="Active Orders" value={stats?.todayOrders.toString() || '0'} icon={<ShoppingCart className="text-blue-500" />} change="+5" />
               <StatCard title="Rider Fleet" value="482" icon={<Package className="text-orange-500" />} change="88% UTIL" />
               <StatCard title="Stock Alerts" value={stats?.pendingOrders.toString() || '0'} icon={<Clock className="text-rose-500" />} />
@@ -380,9 +380,9 @@ export default function App() {
                       <div className="flex justify-between items-end">
                         <div>
                           <div className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">{branch.name}</div>
-                          <div className="text-2xl font-black tracking-tighter text-brand-navy">${branch.sales.toFixed(2)}</div>
+                          <div className="text-2xl font-black tracking-tighter text-brand-navy">₹{branch.sales.toFixed(2)}</div>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400">Target: $10k</span>
+                        <span className="text-[10px] font-bold text-slate-400">Target: ₹1L</span>
                       </div>
                       <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
                         <motion.div 
@@ -484,7 +484,7 @@ export default function App() {
                         <img src={item.image} className="h-20 w-20 rounded-2xl object-cover shadow-sm" />
                         <div className="flex flex-1 flex-col">
                           <h4 className="text-sm font-bold text-brand-navy">{item.name}</h4>
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4">${item.price.toFixed(2)} / {item.unit}</span>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4">₹{item.price.toFixed(2)} / {item.unit}</span>
                           <div className="mt-auto flex items-center justify-between">
                             <div className="flex items-center gap-4 rounded-xl bg-white border border-slate-200 px-3 py-1">
                               <button onClick={() => updateQuantity(item.id, -1)} className="text-slate-400 hover:text-brand-navy"><Minus className="h-3 w-3" /></button>
@@ -505,15 +505,15 @@ export default function App() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
                       <span>Subtotal</span>
-                      <span className="text-brand-navy">${subtotal.toFixed(2)}</span>
+                      <span className="text-brand-navy">₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
                       <span>Logistics Fee</span>
-                      <span className="text-brand-navy">{cart.length > 0 ? '$1.99' : '$0.00'}</span>
+                      <span className="text-brand-navy">{cart.length > 0 ? '₹20.00' : '₹0.00'}</span>
                     </div>
                     <div className="flex justify-between border-t border-slate-200 pt-4">
                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Final Gross</span>
-                      <span className="text-3xl font-black tracking-tighter text-brand-navy">${(cart.length > 0 ? subtotal + 1.99 : 0).toFixed(2)}</span>
+                      <span className="text-3xl font-black tracking-tighter text-brand-navy">₹{(cart.length > 0 ? subtotal + 20 : 0).toFixed(2)}</span>
                     </div>
                   </div>
                   <button 
