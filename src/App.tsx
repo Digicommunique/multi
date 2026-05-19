@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Branch, Category, Product, CartItem, Order, AdminStats } from './types';
+import { BRANCHES, CATEGORIES, PRODUCTS } from './constants';
 
 // Icon Map for Categories
 const ICON_MAP: Record<string, any> = {
@@ -45,14 +46,14 @@ const ICON_MAP: Record<string, any> = {
 
 export default function App() {
   const [view, setView] = useState<'shop' | 'admin'>('shop');
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<Branch[]>(BRANCHES);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(() => {
     const saved = localStorage.getItem('martly_branch');
-    return saved ? JSON.parse(saved) : null;
+    return saved ? JSON.parse(saved) : BRANCHES[0];
   });
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('martly_cart');
     return saved ? JSON.parse(saved) : [];
