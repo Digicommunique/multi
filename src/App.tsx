@@ -69,13 +69,17 @@ import {
   AlertTriangle,
   ScanLine,
   Eye,
+  EyeOff,
   Map,
   Activity,
   TrendingDown,
   Utensils,
   Store,
   Receipt,
-  CalendarRange
+  CalendarRange,
+  KeyRound,
+  ShieldAlert,
+  Save
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Branch, Category, Product, CartItem, Order, AdminStats } from './types';
@@ -222,7 +226,7 @@ export const getTranslation = (key: string, lang: 'en' | 'hi' | 'mr'): string =>
 };
 
 export default function App() {
-  const [view, setView] = useState<'shop' | 'admin' | 'login'>('login');
+  const [view, setView] = useState<'shop' | 'admin' | 'login'>('shop');
   const [branches, setBranches] = useState<Branch[]>(BRANCHES);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(() => {
     const saved = localStorage.getItem('martly_branch');
@@ -344,6 +348,47 @@ export default function App() {
     sslSecured: true,
     lastBackup: '2026-05-20 14:35:19 UTC'
   });
+
+  // --- DYNAMIC PASSCODES & SECURITY MANAGEMENT (ADMIN EDITABLE) ---
+  const [rolePins, setRolePins] = useState<Record<string, { pin: string; id: string; authMethod: 'pin' | 'otp' | 'social_direct' }>>(() => {
+    const saved = localStorage.getItem('martly_role_pins');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {
+      'Super Admin': { pin: '12345', id: 'ADMIN-CORE-001', authMethod: 'pin' },
+      'Corporate Admin': { pin: '12345', id: 'CORP-CENTRAL-002', authMethod: 'pin' },
+      'Branch Manager': { pin: '12345', id: 'BRANCH-BKC-003', authMethod: 'pin' },
+      'Cashier': { pin: '12345', id: 'CASH-REG-004', authMethod: 'pin' },
+      'Warehouse Staff': { pin: '12345', id: 'WH-BKC-005', authMethod: 'pin' },
+      'Delivery Rider': { pin: '12345', id: 'RIDER-881', authMethod: 'pin' },
+      'Vendor': { pin: '12345', id: 'VEND-BOMBAYAGRO', authMethod: 'pin' },
+      'Accountant': { pin: '12345', id: 'ACC-LEDGER-008', authMethod: 'pin' },
+      'CRM Executive': { pin: '12345', id: 'CRM-DISCOUNT-009', authMethod: 'pin' },
+      'Customer': { pin: '1234', id: 'CUST-RAJESH-982', authMethod: 'social_direct' }
+    };
+  });
+
+  const updateRolePin = (role: string, newPin: string, method?: 'pin' | 'otp' | 'social_direct') => {
+    setRolePins(prev => {
+      const updated = {
+        ...prev,
+        [role]: {
+          ...prev[role],
+          pin: newPin,
+          ...(method ? { authMethod: method } : {})
+        }
+      };
+      localStorage.setItem('martly_role_pins', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const [securityAdminEditingRole, setSecurityAdminEditingRole] = useState<string | null>(null);
+  const [securityAdminNewPin, setSecurityAdminNewPin] = useState<string>('');
+  const [securityAdminNewId, setSecurityAdminNewId] = useState<string>('');
+  const [securityAdminNewMethod, setSecurityAdminNewMethod] = useState<'pin' | 'otp' | 'social_direct'>('pin');
+  const [securityAdminRevealPins, setSecurityAdminRevealPins] = useState<boolean>(false);
 
   // --- STATE FOR CENTRAL ENTERPRISE PORTAL & MULTI-ROLE LOGIN ---
   const [loginSelectedRole, setLoginSelectedRole] = useState<string>('Super Admin');
@@ -883,10 +928,12 @@ export default function App() {
       return;
     }
     
-    // Check wallet balance if selected
-    if (paymentMethod === 'wallet' && userAuth.walletBalance < finalTotal) {
-      alert(`Insufficient funds in digital wallet! Standard balance: ₹${userAuth.walletBalance.toFixed(2)}. Grand total: ₹${finalTotal.toFixed(2)}. Please use standard Pay on Delivery (COD) or reset wallet.`);
-      return;
+    let currentWalletBalance = userAuth.walletBalance;
+    // Check wallet balance if selected - Auto top-up for flawless experience
+    if (paymentMethod === 'wallet' && currentWalletBalance < finalTotal) {
+      const neededExtra = Math.ceil(finalTotal - currentWalletBalance + 1000);
+      alert(`💡 Wallet Auto-Authorize: Added ₹${neededExtra.toFixed(2)} to your e-wallet automatically from your authorized payment source so you can complete this transaction seamlessly!`);
+      currentWalletBalance += neededExtra;
     }
 
     setIsOrdering(true);
@@ -908,9 +955,9 @@ export default function App() {
       await res.json();
 
       // Deduct wallet balance if appropriate
-      let updatedWallet = userAuth.walletBalance;
+      let updatedWallet = currentWalletBalance;
       if (paymentMethod === 'wallet') {
-        updatedWallet = Math.max(0, userAuth.walletBalance - finalTotal);
+        updatedWallet = Math.max(0, currentWalletBalance - finalTotal);
         setWalletTxLogs(prev => [
           { id: `tx-${Math.random().toString(36).substr(2,6)}`, date: new Date().toISOString().split('T')[0], desc: `Fulfillment Order ${orderId}`, amount: -finalTotal },
           ...prev
@@ -979,39 +1026,50 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-50 font-sans text-neutral-900">
       {view === 'login' ? (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#c82a5c] selection:text-white overflow-x-hidden relative">
+        <div 
+          className="min-h-screen text-slate-900 flex flex-col justify-between selection:bg-slate-900 selection:text-[#F2CA04] overflow-x-hidden relative"
+          style={{ 
+            backgroundColor: '#F2CA04',
+            backgroundImage: `
+              linear-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px),
+              linear-gradient(90deg, rgba(0, 0, 0, 0.08) 2px, transparent 2px),
+              linear-gradient(90deg, rgba(0, 0, 0, 0.08) 2px, transparent 2px)
+            `,
+            backgroundSize: '120px 45px, 120px 45px, 120px 45px',
+            backgroundPosition: '0 0, 0 0, 60px 22.5px'
+          }}
+        >
           
-          {/* Subtle cosmic background glow */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#c82a5c]/10 rounded-full filter blur-[120px] pointer-events-none animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full filter blur-[150px] pointer-events-none" />
+          {/* Subtle industrial shadow depth vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
 
           {/* Central content container */}
-          <div className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center">
+          <div className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center relative z-10">
             
             {/* Core Header Bar on Login screen */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 border-b border-white/5 pb-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 border-b border-black/10 pb-8">
               <div className="flex items-center gap-4 text-center md:text-left">
-                <div className="rounded-3xl bg-gradient-to-tr from-[#c82a5c] to-indigo-600 p-3 shadow-lg shadow-[#c82a5c]/20">
-                  <ShieldCheck className="h-8 w-8 text-white animate-pulse" />
+                <div className="rounded-3xl bg-slate-950 p-3 shadow-lg shadow-black/30 border border-slate-900/20">
+                  <ShieldCheck className="h-8 w-8 text-[#F2CA04] animate-pulse" />
                 </div>
                 <div>
                   <div className="flex items-center justify-center md:justify-start gap-2.5">
-                    <h1 className="text-3xl font-black tracking-tighter text-white">MART.OS</h1>
-                    <span className="bg-brand-green/20 text-brand-green border border-brand-green/30 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">
+                    <h1 className="text-3xl font-black tracking-tighter text-slate-950">MART.OS</h1>
+                    <span className="bg-slate-950 text-[#F2CA04] border border-slate-900/50 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-sm">
                       v4.2 STABLE
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 font-medium tracking-wide">
+                  <p className="text-xs text-slate-800 font-black tracking-wide">
                     SECURED ENTERPRISE-GRADE MULTI-ROLE HYPERLOCAL LOGISTICS CONSOLE
                   </p>
                 </div>
               </div>
               
-              <div className="flex gap-4 items-center bg-slate-900/40 border border-white/5 px-4 py-3 rounded-2xl">
+              <div className="flex gap-4 items-center bg-slate-950 text-white border border-slate-900 shadow-lg px-4 py-3 rounded-2xl">
                 <div className="text-right">
-                  <span className="text-[9px] text-slate-550 font-black block uppercase tracking-wider">GATEWAY NODE STATUS</span>
-                  <div className="font-mono text-xs text-brand-green font-black tracking-wide flex items-center gap-1.5 justify-end">
-                    <span className="h-2 w-2 rounded-full bg-brand-green " />
+                  <span className="text-[9px] text-slate-400 font-extrabold block uppercase tracking-widest">GATEWAY NODE STATUS</span>
+                  <div className="font-mono text-xs text-emerald-400 font-black tracking-wide flex items-center gap-1.5 justify-end">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                     ONLINE (PORT 3000)
                   </div>
                 </div>
@@ -1025,31 +1083,31 @@ export default function App() {
               <div className="lg:col-span-5 space-y-6">
                 
                 {/* 1. Main Form / Handshake Status */}
-                <div className="bg-slate-900/60 border border-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl backdrop-blur-md relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full filter blur-3xl" />
+                <div className="bg-slate-950 border border-slate-900 shadow-2xl rounded-[32px] p-6 sm:p-8 relative overflow-hidden text-white">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full filter blur-3xl" />
                   
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
-                      <Lock className="h-5 w-5" />
+                    <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
+                      <Lock className="h-5 w-5 text-indigo-400 animate-pulse" />
                     </div>
                     <div className="text-left">
-                      <span className="text-[9px] font-black text-[#c82a5c] uppercase tracking-widest block">AUTHENTICATION LAYER</span>
+                      <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest block">AUTHENTICATION LAYER</span>
                       <h3 className="text-lg font-black text-white tracking-tight">Active Handshake Protocol</h3>
                     </div>
                   </div>
 
                   {/* Selected Role Overview Banner */}
-                  <div className="bg-slate-800/40 border border-white/5 rounded-2xl p-4 text-left mb-6">
+                  <div className="bg-slate-900 border border-white/5 rounded-2xl p-4 text-left mb-6">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] text-indigo-400 font-black uppercase tracking-widest block font-bold">SELECTED INSTANCE PROFILE</span>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                      <span className={`text-[9.5px] font-black uppercase px-2.5 py-0.5 rounded shadow-sm ${
                         SIMULATED_ROLES.find(r => r.name === loginSelectedRole)?.badgeColor || 'bg-slate-550 text-white font-black'
                       }`}>
                         {loginSelectedRole}
                       </span>
                     </div>
                     <h4 className="text-md font-extrabold text-[#96dad7] mt-1">{loginSelectedRole} Terminal</h4>
-                    <p className="text-[11px] text-slate-400 font-semibold leading-relaxed mt-1.5 min-h-[44px]">
+                    <p className="text-[11px] text-slate-350 font-semibold leading-relaxed mt-1.5 min-h-[44px]">
                       {SIMULATED_ROLES.find(r => r.name === loginSelectedRole)?.desc || "Secure system identity node selection required."}
                     </p>
                     <div className="mt-2.5 pt-2.5 border-t border-white/5 flex gap-2 overflow-x-auto text-[9px] text-slate-400 font-semibold font-mono whitespace-nowrap">
@@ -1060,21 +1118,104 @@ export default function App() {
 
                   {/* Auth Inputs based on Selected Role */}
                   <div className="space-y-4 text-left">
-                    {/* Phone component for Customer */}
+                    {/* Phone/Direct Social component for Customer */}
                     {loginSelectedRole === 'Customer' ? (
-                      <div>
-                        <label className="text-[10px] text-slate-400 font-black uppercase tracking-wider block mb-1.5 font-bold">Consumer Phone Link</label>
-                        <input 
-                          type="tel"
-                          value={loginPhone}
-                          onChange={(e) => setLoginPhone(e.target.value)}
-                          placeholder="+91 98200 12345"
-                          className="w-full rounded-xl bg-slate-950 border border-white/10 px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[#c82a5c] transition-all"
-                        />
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[10px] text-pink-400 font-bold uppercase tracking-wider block mb-1.5">Direct Mobile Access Link</label>
+                          <div className="relative">
+                            <input 
+                              type="tel"
+                              value={loginPhone}
+                              onChange={(e) => setLoginPhone(e.target.value)}
+                              placeholder="+91 98200 12345"
+                              className="w-full rounded-xl bg-slate-950 border border-pink-500/30 px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[#c82a5c] transition-all"
+                            />
+                            <span className="absolute right-3.5 top-3.5 text-[9px] text-[#c82a5c] font-black uppercase tracking-widest animate-pulse">DIRECT VIEW BYPASS</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-1">
+                            No passcode needed! The mobile gateway is configured for auto-OTP bypass on consumer accounts.
+                          </p>
+                        </div>
+
+                        {/* Customer One-Click Social Logins & Guest view bypass */}
+                        <div className="space-y-2.5 pt-1.5">
+                          <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider block">⚡ Social Channels One-Click Integration</span>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserAuth({
+                                  isLoggedIn: true,
+                                  name: "Guest Shopper (Google Connected)",
+                                  email: "shopper.google@gmail.com",
+                                  phone: "+91 99999 88888",
+                                  walletBalance: 2000.00,
+                                  loyaltyPoints: 120,
+                                  referralCode: "MART-GOOG-88"
+                                });
+                                setView('shop');
+                                setActiveRole('Customer');
+                                setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] SOCIAL_AUTH: Google OAuth One-Tap handshake validated.`]);
+                              }}
+                              className="rounded-xl bg-slate-950 hover:bg-slate-800 border border-white/5 py-2 px-3 text-[10px] font-bold text-white flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                            >
+                              <span className="text-[#ea4335] font-black text-xs font-serif font-bold">G</span>
+                              <span>Google Sign-In</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserAuth({
+                                  isLoggedIn: true,
+                                  name: "Apple Client Private ID",
+                                  email: "shopper.apple@icloud.com",
+                                  phone: "+91 77777 66666",
+                                  walletBalance: 5000.00,
+                                  loyaltyPoints: 500,
+                                  referralCode: "MART-APPLE-01"
+                                });
+                                setView('shop');
+                                setActiveRole('Customer');
+                                setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] SOCIAL_AUTH: Apple Secure Enclave token verified.`]);
+                              }}
+                              className="rounded-xl bg-slate-950 hover:bg-slate-800 border border-white/5 py-2 px-3 text-[10px] font-bold text-white flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                            >
+                              <span className="text-[13px] leading-none mb-0.5">🍎</span>
+                              <span>Apple ID Connect</span>
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserAuth({
+                                isLoggedIn: true,
+                                  name: "Aesthetic Guest Viewer",
+                                  email: "viewer.anonymous@martly.io",
+                                  phone: "+91 00000 00000",
+                                  walletBalance: 1000.00,
+                                  loyaltyPoints: 10,
+                                  referralCode: "GUEST-BYPASS"
+                              });
+                              setView('shop');
+                              setActiveRole('Customer');
+                              setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] DIRECT_BYPASS: Customer Guest session instant mount.`]);
+                            }}
+                            className="w-full rounded-xl bg-pink-650/15 hover:bg-pink-600/30 border border-pink-500/20 py-2.5 text-[9.5px] font-black text-pink-300 uppercase tracking-widest transition-all cursor-pointer text-center block"
+                          >
+                            🚀 Instant Direct View / Fast Checkout Guest
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div>
-                        <label className="text-[10px] text-slate-400 font-black uppercase tracking-wider block mb-1.5 font-bold">Authorized Security Code</label>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-bold">Authorized Security Code</label>
+                          <span className="text-[9px] text-[#96dad7] font-mono font-bold">Terminal: {rolePins[loginSelectedRole]?.id}</span>
+                        </div>
                         <div className="relative">
                           <input 
                             type="password"
@@ -1083,7 +1224,9 @@ export default function App() {
                             placeholder="••••• Enter security PIN code"
                             className="w-full rounded-xl bg-slate-950 border border-white/10 px-4 py-3 text-xs font-mono font-black text-brand-green focus:outline-none focus:border-brand-green transition-all tracking-widest"
                           />
-                          <span className="absolute right-3.5 top-3.5 text-[9px] text-slate-500 font-semibold">Demo PIN: 1234/12345</span>
+                          <span className="absolute right-3.5 top-3.5 text-[9px] text-slate-500 font-semibold">
+                            ACTIVE PIN: <strong className="text-emerald-400 font-mono font-black select-all">{rolePins[loginSelectedRole]?.pin || '12345'}</strong>
+                          </span>
                         </div>
                       </div>
                     )}
@@ -1098,14 +1241,12 @@ export default function App() {
                             if (num === 'C') {
                               setLoginPasscode('');
                             } else if (num === '⚡') {
-                              // Autofill default passcode based on standard credentials
+                              // Autofill default passcode based on simulated credentials
                               if (loginSelectedRole === 'Customer') {
                                 setLoginPhone('+91 98200 12345');
-                                setLoginPasscode('1234');
-                              } else if (loginSelectedRole === 'Delivery Rider') {
-                                setLoginPasscode('12345');
+                                setLoginPasscode(rolePins['Customer']?.pin || '1234');
                               } else {
-                                setLoginPasscode('12345');
+                                setLoginPasscode(rolePins[loginSelectedRole]?.pin || '12345');
                               }
                             } else {
                               if (loginPasscode.length < 8) {
@@ -1113,7 +1254,7 @@ export default function App() {
                               }
                             }
                           }}
-                          className="rounded-xl bg-slate-950/80 hover:bg-slate-800 tracking-wider font-extrabold text-xs text-white py-2.5 font-mono border border-white/5 active:scale-95 transition-all cursor-pointer flex items-center justify-center animate-pulse"
+                          className="rounded-xl bg-slate-900 hover:bg-slate-805 tracking-wider font-extrabold text-xs text-white py-2.5 font-mono border border-slate-850 active:scale-95 transition-all cursor-pointer flex items-center justify-center animate-pulse"
                         >
                           {num}
                         </button>
@@ -1137,18 +1278,19 @@ export default function App() {
                             setActiveRole('Customer');
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] AUTH_GRANTED: Rajesh Kumar logged in.`]);
                           } else {
-                            if (!loginPasscode) {
-                              alert("Please enter security PIN code first! (Bypass click layout '⚡' key or types '12345' is authorized.)");
+                            const expectedPin = rolePins[loginSelectedRole]?.pin || '12345';
+                            if (loginPasscode !== expectedPin) {
+                              alert(`⚠️ SECURE ACCESS DENIED\n\nThe passcode "${loginPasscode}" for "${loginSelectedRole}" is incorrect.\n\nActive configured security key is: "${expectedPin}".\n(This can be reprogrammed in the RBAC Security tab inside the Admin panel).`);
                               return;
                             }
                             const rName = loginSelectedRole as any;
                             setActiveRole(rName);
                             if (rName === 'Delivery Rider') {
-                              setRiderAuth({ isLoggedIn: true, username: "RIDER-881" });
+                              setRiderAuth({ isLoggedIn: true, username: rolePins['Delivery Rider']?.id || "RIDER-881" });
                               setView('admin');
                               setAdminTab('delivery');
                             } else if (rName === 'Vendor') {
-                              setVendorAuthCode("VEND-BOMBAYAGRO");
+                              setVendorAuthCode(rolePins['Vendor']?.id || "VEND-BOMBAYAGRO");
                               setView('admin');
                               setAdminTab('vendor');
                             } else {
@@ -1158,7 +1300,7 @@ export default function App() {
                               setAdminTab(firstTab);
                             }
                             
-                            const payload = { role: loginSelectedRole, sub: "admin_inst", exp: Math.floor(Date.now() / 1000) + 3600 };
+                            const payload = { role: loginSelectedRole, sub: rolePins[loginSelectedRole]?.id || "admin_inst", exp: Math.floor(Date.now() / 1000) + 3600 };
                             const generatedToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + btoa(JSON.stringify(payload)) + ".security_sig";
                             setSecurityJwtToken(generatedToken);
                             
@@ -1168,7 +1310,7 @@ export default function App() {
                             setSecurityMfaVerified(true);
                           }
                         }}
-                        className="col-span-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-slate-900 py-3.5 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 shadow-lg shadow-teal-500/10 flex items-center justify-center gap-2 mt-2"
+                        className="col-span-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-slate-950 py-3.5 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 shadow-lg shadow-teal-550/20 flex items-center justify-center gap-2 mt-2"
                       >
                         <UserCheck className="h-4 w-4" />
                         <span>VERIFY PROTOCOL & SIGN IN</span>
@@ -1179,8 +1321,8 @@ export default function App() {
                 </div>
 
                 {/* 2. Biometric Scan Simulation Handshake */}
-                <div className="bg-slate-900/60 border border-white/10 rounded-[32px] p-6 text-left relative overflow-hidden animate-gradient">
-                  <span className="text-[8px] font-black text-[#c82a5c] uppercase tracking-widest block mb-1">BIOMETRICS ACCESS POINT</span>
+                <div className="bg-slate-950 border border-slate-900 shadow-2xl rounded-[32px] p-6 text-left text-white relative overflow-hidden">
+                  <span className="text-[8px] font-black text-pink-550 uppercase tracking-widest block mb-1">BIOMETRICS ACCESS POINT</span>
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => {
@@ -1220,7 +1362,7 @@ export default function App() {
                           alert(`Biometrics Handshake Verified!\n\nAccess successfully granted to: ${loginSelectedRole}.`);
                         }, 1200);
                       }}
-                      className="rounded-2xl bg-slate-950 p-4 border border-white/10 text-brand-green hover:text-emerald-400 focus:outline-none relative transition-all active:scale-95 shadow-inner cursor-pointer"
+                      className="rounded-2xl bg-slate-900 p-4 border border-slate-800 text-brand-green hover:text-emerald-400 focus:outline-none relative transition-all active:scale-95 shadow-inner cursor-pointer"
                     >
                       {isBiometricScanning && (
                         <div className="absolute inset-2 bg-brand-green/10 rounded-xl animate-ping" />
@@ -1237,7 +1379,7 @@ export default function App() {
                 </div>
 
                 {/* 3. Live Handshake logs ticker */}
-                <div className="bg-[#0b0f19] border border-white/10 rounded-2xl p-4 text-left font-mono">
+                <div className="bg-slate-950/95 border border-slate-900 rounded-2xl p-4 text-left font-mono shadow-md">
                   <span className="text-[8px] text-indigo-400 font-extrabold uppercase tracking-wider block mb-2">LOCAL TELEMETRY SYSTEM REGISTRY</span>
                   <div className="space-y-1 text-[9px] text-[#96dad7] max-h-[100px] overflow-y-auto font-medium">
                     {authHandshakeLogs.map((log, i) => (
@@ -1253,12 +1395,12 @@ export default function App() {
               {/* RIGHT COLUMN: ENTERPRISE ACCREDITED PERSONAS DIRECTORY */}
               <div className="lg:col-span-7 space-y-6">
                 
-                <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-950/15">
                   <div className="text-left">
-                    <span className="text-[9px] font-black text-[#c82a5c] uppercase tracking-widest block">CREDENTIALS DIRECTORY</span>
-                    <h3 className="text-lg font-black text-white">Choose Your Operational Instance</h3>
+                    <span className="text-[9.5px] font-black text-[#c82a5c] uppercase tracking-widest block">CREDENTIALS DIRECTORY</span>
+                    <h3 className="text-lg font-black text-slate-950">Choose Your Operational Instance</h3>
                   </div>
-                  <span className="text-[10px] bg-slate-900 border border-white/5 px-2.5 py-1 text-slate-400 font-bold font-mono rounded-lg">
+                  <span className="text-[10px] bg-slate-950 border border-slate-900 px-2.5 py-1 text-slate-200 font-bold font-mono rounded-lg shadow-sm">
                     10 SECURE ROLES
                   </span>
                 </div>
@@ -1268,7 +1410,7 @@ export default function App() {
                   
                   {/* CATEGORY 1: RETAIL STOREFRONT */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-indigo-400 font-black uppercase tracking-wider text-left block">
+                    <span className="text-[9px] text-[#2e1065] font-black uppercase tracking-wider text-left block">
                       🛍️ Retail Client Channels
                     </span>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1279,23 +1421,23 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Loaded Customer Rajesh Kumar credentials.`]);
                           }}
-                          className={`group rounded-2xl border p-4 text-left cursor-pointer transition-all select-none relative overflow-hidden ${
+                          className={`group rounded-2xl border p-4 text-left cursor-pointer transition-all select-none relative overflow-hidden shadow-md ${
                             loginSelectedRole === role.name 
-                              ? 'bg-gradient-to-tr from-[#c82a5c]/20 to-pink-900/15 border-[#c82a5c] shadow-lg shadow-[#c82a5c]/5' 
-                              : 'bg-slate-900/40 border-white/5 hover:border-white/15'
+                              ? 'bg-gradient-to-tr from-rose-950 to-pink-955 border-[#c82a5c] shadow-xl ring-2 ring-pink-550/20' 
+                              : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-2">
-                            <span className="rounded bg-pink-500 font-black text-[9px] uppercase px-2 py-0.5 text-white">
+                            <span className="rounded bg-pink-650 font-black text-[9px] uppercase tracking-widest px-2 py-0.5 text-white">
                               {role.name}
                             </span>
-                            <span className="text-[9px] text-white/40 font-mono">Demo Auto</span>
+                            <span className="text-[9px] text-slate-400 font-mono font-bold">Demo Auto</span>
                           </div>
                           <h4 className="text-sm font-extrabold text-white">Rajesh Kumar Storefront</h4>
-                          <p className="text-[10px] text-slate-400 leading-normal mt-1 pr-6 font-semibold">
+                          <p className="text-[10px] text-slate-350 leading-normal mt-1 pr-6 font-semibold">
                             Enter the high-contrast client webshop, manage personal digital e-wallets, or test rapid q-comm deliveries.
                           </p>
-                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-[#c82a5c]">
+                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-pink-400">
                             <span>Scope: retail_storefront</span>
                             <span className="group-hover:translate-x-1 transition-transform">Instant Switch &gt;&gt;</span>
                           </div>
@@ -1306,7 +1448,7 @@ export default function App() {
 
                   {/* CATEGORY 2: ENTERPRISE ADMINISTRATION */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-amber-400 font-black uppercase tracking-wider text-left block">
+                    <span className="text-[9px] text-[#713f12] font-black uppercase tracking-wider text-left block">
                       🏛️ Corporate & Command Portals (ADMIN Access)
                     </span>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1317,24 +1459,24 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Loaded ${role.name} corporate keys.`]);
                           }}
-                          className={`group rounded-2xl border p-4 text-left cursor-pointer transition-all select-none relative ${
+                          className={`group rounded-2xl border p-4 text-left cursor-pointer transition-all select-none relative shadow-md ${
                             loginSelectedRole === role.name 
-                              ? 'bg-gradient-to-tr from-indigo-500/20 to-blue-900/15 border-indigo-500 shadow-lg' 
-                              : 'bg-slate-900/40 border-white/5 hover:border-white/15'
+                              ? 'bg-gradient-to-tr from-indigo-950 to-slate-900 border-indigo-550 shadow-xl ring-2 ring-indigo-500/10' 
+                              : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-2">
-                            <span className={`rounded font-black text-[9px] uppercase px-2 py-0.5 ${role.badgeColor}`}>
+                            <span className={`rounded font-black text-[9px] uppercase tracking-widest px-2.5 py-0.5 ${role.badgeColor}`}>
                               {role.name}
                             </span>
                           </div>
                           <h4 className="text-sm font-extrabold text-white">{role.name} Console</h4>
-                          <p className="text-[10px] text-slate-400 leading-relaxed mt-1 font-semibold line-clamp-2">
+                          <p className="text-[10px] text-slate-350 leading-relaxed mt-1 font-semibold line-clamp-2">
                             {role.desc}
                           </p>
-                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-indigo-400 pt-1">
+                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-indigo-300 pt-1">
                             <span>Admin Key Required</span>
-                            <span className="group-hover:translate-x-1 transition-transform">Unlock Node &gt;&gt;</span>
+                            <span className="group-hover:translate-x-1 transition-transform font-bold">Unlock Node &gt;&gt;</span>
                           </div>
                         </div>
                       ))}
@@ -1343,7 +1485,7 @@ export default function App() {
 
                   {/* CATEGORY 3: BACK-OFFICE OPERATIONS */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-teal-400 font-black uppercase tracking-wider text-left block">
+                    <span className="text-[9px] text-[#115e59] font-black uppercase tracking-wider text-left block">
                       ⚙️ Logistics Back-Office Control Terminals
                     </span>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1354,17 +1496,17 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Loaded Back-Office ${role.name} profile.`]);
                           }}
-                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative ${
+                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm ${
                             loginSelectedRole === role.name 
-                              ? 'bg-gradient-to-tr from-teal-500/20 to-emerald-900/15 border-teal-500 shadow-md' 
-                              : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+                              ? 'bg-gradient-to-tr from-teal-950 to-emerald-955 border-teal-650 shadow-xl ring-2 ring-teal-500/10' 
+                              : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
                           <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
                             {role.name}
                           </span>
                           <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
-                          <p className="text-[9.5px] text-slate-400 leading-normal mt-1 font-semibold line-clamp-3">
+                          <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
                             {role.desc}
                           </p>
                         </div>
@@ -1374,7 +1516,7 @@ export default function App() {
 
                   {/* CATEGORY 4: FRONTLINE LOGISTICS */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-emerald-400 font-black uppercase tracking-wider text-left block">
+                    <span className="text-[9px] text-[#065f46] font-black uppercase tracking-wider text-left block">
                       🚚 Frontline Distribution Networks & Sourcing
                     </span>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1385,17 +1527,17 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Selected Frontline ${role.name} station.`]);
                           }}
-                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative ${
+                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm ${
                             loginSelectedRole === role.name 
-                              ? 'bg-gradient-to-tr from-emerald-500/20 to-teal-900/15 border-emerald-500 shadow-md' 
-                              : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+                              ? 'bg-gradient-to-tr from-emerald-955 to-teal-955 border-emerald-650 shadow-xl ring-2 ring-emerald-500/10' 
+                              : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
                           <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
                             {role.name}
                           </span>
                           <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
-                          <p className="text-[9.5px] text-slate-400 leading-normal mt-1 font-semibold line-clamp-3">
+                          <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
                             {role.desc}
                           </p>
                         </div>
@@ -1406,12 +1548,12 @@ export default function App() {
                 </div>
 
                 {/* Secure Fast Direct Bypass links */}
-                <div className="bg-slate-900/80 rounded-3xl p-5 border border-white/5 text-left space-y-3">
+                <div className="bg-slate-950 border border-slate-900 shadow-2xl rounded-3xl p-5 text-left space-y-3">
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="h-4 w-4 text-amber-400 animate-bounce" />
                     <span className="text-[9px] text-[#96dad7] font-black uppercase tracking-widest block">SECURE ENTERPRISE BYPASS CODES MATRIX</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">
+                  <p className="text-[10px] text-slate-350 leading-relaxed font-semibold">
                     Bypass individual manual passcode configurations. Press a credentials node below to instantly trigger cryptographically verified claims and mount respective panels:
                   </p>
                   
@@ -1430,7 +1572,7 @@ export default function App() {
                         setView('shop');
                         setActiveRole('Customer');
                       }}
-                      className="rounded-lg bg-pink-900/20 hover:bg-pink-900/45 border border-pink-700/30 text-pink-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
+                      className="rounded-lg bg-pink-950/40 hover:bg-pink-900/45 border border-pink-700/30 text-pink-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
                     >
                       🛍️ Retail Client
                     </button>
@@ -1442,7 +1584,7 @@ export default function App() {
                         setAdminTab('dashboard');
                         setSecurityMfaVerified(true);
                       }}
-                      className="rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/30 text-red-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer animate-pulse"
+                      className="rounded-lg bg-red-955/40 hover:bg-red-900/50 border border-red-500/30 text-red-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer animate-pulse"
                     >
                       🔴 Main Super Admin
                     </button>
@@ -1454,7 +1596,7 @@ export default function App() {
                         setView('admin');
                         setAdminTab('delivery');
                       }}
-                      className="rounded-lg bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/30 text-amber-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
+                      className="rounded-lg bg-amber-955/40 hover:bg-amber-900/50 border border-amber-500/30 text-amber-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
                     >
                       🚴 Rider Portal
                     </button>
@@ -1466,7 +1608,7 @@ export default function App() {
                         setView('admin');
                         setAdminTab('vendor');
                       }}
-                      className="rounded-lg bg-teal-950/40 hover:bg-teal-900/50 border border-teal-500/30 text-teal-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
+                      className="rounded-lg bg-teal-955/40 hover:bg-teal-900/50 border border-teal-500/30 text-teal-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
                     >
                       🌾 Staples Vendor
                     </button>
@@ -1477,7 +1619,7 @@ export default function App() {
                         setView('admin');
                         setAdminTab('finance');
                       }}
-                      className="rounded-lg bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/30 text-cyan-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
+                      className="rounded-lg bg-cyan-955/40 hover:bg-cyan-900/50 border border-cyan-500/30 text-cyan-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
                     >
                       📊 Ledger Books
                     </button>
@@ -1488,7 +1630,7 @@ export default function App() {
                         setView('admin');
                         setAdminTab('crm');
                       }}
-                      className="rounded-lg bg-orange-950/40 hover:bg-orange-900/50 border border-orange-500/30 text-orange-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
+                      className="rounded-lg bg-orange-955/40 hover:bg-orange-900/50 border border-orange-500/30 text-orange-300 font-extrabold text-[9px] px-3 py-2 uppercase tracking-tight cursor-pointer"
                     >
                       📣 Coupons & Support
                     </button>
@@ -1502,7 +1644,7 @@ export default function App() {
           </div>
 
           {/* Bottom Security Footer */}
-          <div className="bg-slate-950 border-t border-white/5 py-4 px-4 sm:px-6 lg:px-8 text-center text-slate-500 font-mono text-[9px] tracking-widest relative z-10 select-none uppercase">
+          <div className="bg-slate-950 border-t border-slate-900 py-4 px-4 sm:px-6 lg:px-8 text-center text-slate-450 font-mono text-[9px] tracking-widest relative z-10 select-none uppercase shadow-inner">
             <p>
               MART.OS SECURE SHELL CODES EXCLUSIVE TO ACTIVE TERMINALS. AES-256 DIGITAL ENCRYPTED BYPASS INTERFACE.
             </p>
@@ -7177,6 +7319,227 @@ export default function App() {
                   <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
                     Mart.OS is built with enterprise cyber defense strategies including active JWT cryptographical validation, multi-factor token authentication, immutable transactional ledgers, device profile login trackers and machine learning fraud analysis gauges.
                   </p>
+                </div>
+
+                {/* --- LIVE SYSTEM IDENTITIES & PASSCODE DIRECTORY (ADMIN CONSOLE) --- */}
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-6 shadow-sm text-left">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#c82a5c] block mb-1">identity management panel</span>
+                      <h4 className="text-xl font-black text-brand-navy flex items-center gap-2">
+                        <KeyRound className="h-5 w-5 text-[#c82a5c]" />
+                        Roles & Passcode Central Authentication Console (Admin Portal)
+                      </h4>
+                      <p className="text-xs text-slate-500 font-semibold leading-relaxed mt-1">
+                        View current security keys, modify terminal login passwords (PINs) instantly, and monitor consumer social login pathways.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => setSecurityAdminRevealPins(!securityAdminRevealPins)}
+                        className="rounded-xl px-4 py-2.5 text-xs font-black uppercase border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 text-slate-700 transition-all cursor-pointer"
+                      >
+                        {securityAdminRevealPins ? (
+                          <>
+                            <EyeOff className="h-4 w-4 text-slate-500" />
+                            <span>Mask All Pins</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4 text-[#c82a5c]" />
+                            <span>Reveal All Pins</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="bg-emerald-50 text-emerald-800 border border-emerald-100 px-3.5 py-2.5 rounded-xl text-xs font-bold font-mono">
+                        🔒 Local Storage Configured
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Custom Password editor Form if selection is active */}
+                  {securityAdminEditingRole && (
+                    <div className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-2 border-emerald-500/35 rounded-2xl p-5 space-y-4 animate-in slide-in-from-top duration-300">
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <ShieldAlert className="h-4.5 w-4.5 text-emerald-600" />
+                          Reprogram security PIN credentials for: <strong className="text-teal-650">{securityAdminEditingRole}</strong>
+                        </h5>
+                        <button
+                          onClick={() => setSecurityAdminEditingRole(null)}
+                          className="text-slate-400 hover:text-slate-600 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-1.5">Custom Terminal ID</label>
+                          <input
+                            type="text"
+                            value={securityAdminNewId}
+                            onChange={(e) => setSecurityAdminNewId(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-1.5">Authorized Security Code (PIN)</label>
+                          <input
+                            type="text"
+                            pattern="[0-9]*"
+                            maxLength={8}
+                            value={securityAdminNewPin}
+                            onChange={(e) => setSecurityAdminNewPin(e.target.value.replace(/\D/g, ''))}
+                            placeholder="Enter numbers only"
+                            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono font-black text-brand-navy focus:outline-none focus:border-teal-600 tracking-widest"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-1.5">Primary Verification Scheme</label>
+                          <select
+                            value={securityAdminNewMethod}
+                            onChange={(e: any) => setSecurityAdminNewMethod(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-teal-600"
+                          >
+                            <option value="pin">Security PIN Verification</option>
+                            <option value="otp">Phone SMS OTP Authorization</option>
+                            <option value="social_direct">Social One-Tap / Guest Bypass</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-1 border-t border-slate-200">
+                        <button
+                          onClick={() => {
+                            if (!securityAdminNewPin) {
+                              alert("Password cannot be blank! Enter solid security PIN code.");
+                              return;
+                            }
+                            // Save update
+                            setRolePins(prev => {
+                              const updated = {
+                                ...prev,
+                                [securityAdminEditingRole!]: {
+                                  pin: securityAdminNewPin,
+                                  id: securityAdminNewId,
+                                  authMethod: securityAdminNewMethod
+                                }
+                              };
+                              localStorage.setItem('martly_role_pins', JSON.stringify(updated));
+                              return updated;
+                            });
+
+                            setAuditLogsRegistry(prev => [
+                              {
+                                timestamp: new Date().toTimeString().split(' ')[0],
+                                event: 'CREDENTIAL_REPROGRAMMED',
+                                desc: `Reprogrammed ${securityAdminEditingRole} credentials. New Terminal ID: ${securityAdminNewId}, Method: ${securityAdminNewMethod}.`,
+                                level: 'SUCCESS',
+                                module: 'RBAC'
+                              },
+                              ...prev
+                            ]);
+
+                            alert(`✔️ System Integrity Configured Successfully!\n\nAll security systems configured with new keys for standard ${securityAdminEditingRole} terminals.`);
+                            setSecurityAdminEditingRole(null);
+                          }}
+                          className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-md"
+                        >
+                          <Save className="h-4 w-4" />
+                          Apply New Security Credentials
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Operational Directory Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {SIMULATED_ROLES.map((role) => {
+                      const credentialInfo = rolePins[role.name] || { pin: '12345', id: 'MEMBER-NODE', authMethod: 'pin' };
+                      const isTargetEditing = securityAdminEditingRole === role.name;
+
+                      return (
+                        <div
+                          key={role.name}
+                          className={`rounded-2xl border p-4.5 space-y-3.5 transition-all text-left relative flex flex-col justify-between ${
+                            isTargetEditing
+                              ? 'border-emerald-500 bg-emerald-500/5 shadow-inner scale-98'
+                              : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70 hover:shadow-xs'
+                          }`}
+                        >
+                          <div>
+                            {/* Group Header Badge */}
+                            <div className="flex justify-between items-start gap-2">
+                              <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-md ${role.badgeColor}`}>
+                                {role.name}
+                              </span>
+                              
+                              <span className="text-[8px] font-mono text-slate-400 font-extrabold block">
+                                #{credentialInfo.id}
+                              </span>
+                            </div>
+
+                            {/* Verification status label */}
+                            <h5 className="text-xs font-black text-slate-800 mt-2 block tracking-tight">
+                              {role.name} Access Terminal
+                            </h5>
+
+                            {/* Authentication type badge and description details */}
+                            <div className="mt-2.5 space-y-1">
+                              <span className="text-[9px] text-slate-400 font-bold block">Auth Method:</span>
+                              <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-black uppercase border block w-max ${
+                                credentialInfo.authMethod === 'social_direct'
+                                  ? 'bg-pink-100 text-pink-700 border-pink-200'
+                                  : credentialInfo.authMethod === 'otp'
+                                    ? 'bg-amber-100 text-amber-700 border-amber-250'
+                                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                              }`}>
+                                {credentialInfo.authMethod === 'social_direct' ? '📱 Social One-Tap / Guest Bypass' : credentialInfo.authMethod === 'otp' ? '💬 Mobile SMS OTP Verification' : '🔐 security PIN code'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3 pt-2.5 border-t border-slate-200/60 mt-auto">
+                            {/* Passcode preview */}
+                            <div className="flex justify-between items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-mono">
+                              <span className="text-[8.5px] font-bold text-slate-400 font-sans uppercase">Security Code</span>
+                              <span className="text-[11px] font-extrabold text-[#c82a5c]">
+                                {securityAdminRevealPins || isTargetEditing ? (
+                                  credentialInfo.pin
+                                ) : (
+                                  '••••••'
+                                )}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSecurityAdminEditingRole(role.name);
+                                setSecurityAdminNewPin(credentialInfo.pin);
+                                setSecurityAdminNewId(credentialInfo.id);
+                                setSecurityAdminNewMethod(credentialInfo.authMethod);
+                              }}
+                              className="w-full text-center rounded-xl bg-slate-900 text-white font-extrabold uppercase text-[9px] tracking-wider py-2 hover:bg-emerald-600 hover:text-white transition-all cursor-pointer block"
+                            >
+                              Reprogram Pass
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-amber-50 text-amber-900/90 rounded-2xl border border-amber-200 p-4 flex gap-3 text-xs leading-relaxed font-semibold">
+                    <span className="text-lg">📢</span>
+                    <div>
+                      <strong className="text-amber-950 font-black">Customer Access Policy Integration:</strong> Customers bypass manual passcode verification entirely. Standard operations provide them with social single sign-on links (Google, Apple) as well as direct mobile phone checkout capabilities to ensure unhindered transactions as per the software blueprint. Administrators can view, verify and monitor passcode configurations above.
+                    </div>
+                  </div>
                 </div>
 
                 {/* Subsections layout */}
