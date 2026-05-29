@@ -20,6 +20,14 @@
   background: radial-gradient(circle at center, #f5beb2  0%, #e08370 100%);
 }
 
+@utility bg-slate-900 {
+  background-color: #94b2d7 !important;
+}
+
+@utility bg-slate-950 {
+  background-color: #94b2d7 !important;
+}
+
 @layer base {
   body {
     @apply bg-slate-50 font-sans antialiased text-slate-900;

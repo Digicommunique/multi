@@ -2555,29 +2555,29 @@ export default function App() {
             </header>
 
             {/* A. ACTIVE ROLE SIMULATOR & CREDENTIALS CONTROLLER */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 shadow-xl space-y-4">
+            <div className="bg-slate-900 text-brand-navy rounded-3xl p-6 border border-slate-300 shadow-xl space-y-4">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
                       JWT Auth Verified
                     </span>
-                    <span className="text-slate-450 text-[11px] font-mono">| Claims Token:</span>
-                    <span className="font-mono text-[10px] text-green-400 truncate max-w-[280px] block" title={securityJwtToken}>
+                    <span className="text-slate-800 text-[11px] font-mono">| Claims Token:</span>
+                    <span className="font-mono text-[10px] text-emerald-800 truncate max-w-[280px] block" title={securityJwtToken}>
                       {securityJwtToken}
                     </span>
                   </div>
-                  <h3 className="text-xl font-black text-white flex items-center gap-2">
-                    <Fingerprint className="h-5 w-5 text-emerald-450 animate-pulse" />
-                    Active Access Persona: <span className="text-emerald-400">{activeRole}</span>
+                  <h3 className="text-xl font-black text-brand-navy flex items-center gap-2">
+                    <Fingerprint className="h-5 w-5 text-brand-navy animate-pulse" />
+                    Active Access Persona: <span className="text-teal-950 font-black">{activeRole}</span>
                   </h3>
-                  <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                  <p className="text-xs text-slate-850 max-w-2xl leading-relaxed font-semibold">
                     {SIMULATED_ROLES.find(r => r.name === activeRole)?.desc || "Simulates real-world operational user scope."}
                   </p>
                 </div>
                 
                 <div className="flex flex-wrap gap-2 items-center">
-                  <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">MFA Security:</span>
+                  <span className="text-[10px] text-slate-800 uppercase font-black tracking-wider">MFA Security:</span>
                   <button 
                     onClick={() => {
                       setSecurityMfaVerified(prev => !prev);
@@ -2586,7 +2586,7 @@ export default function App() {
                         ...prev
                       ]);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border cursor-pointer transition-all ${securityMfaVerified ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-rose-500/20 border-rose-500/40 text-rose-300'}`}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border cursor-pointer transition-all ${securityMfaVerified ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-950' : 'bg-rose-500/20 border-rose-500/40 text-rose-950'}`}
                   >
                     {securityMfaVerified ? "✓ OTP Verified" : "⚡ OTP Verification Pending"}
                   </button>
@@ -2594,8 +2594,8 @@ export default function App() {
               </div>
 
               {/* Selector grid of all 10 roles */}
-              <div className="border-t border-slate-800/80 pt-4">
-                <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider block mb-2.5">Switch Active Access Profile (10 Defined Roles):</span>
+              <div className="border-t border-slate-300 pt-4">
+                <span className="text-[10px] text-slate-800 uppercase font-black tracking-wider block mb-2.5">Switch Active Access Profile (10 Defined Roles):</span>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {SIMULATED_ROLES.map(role => {
                     const isSel = activeRole === role.name;
@@ -2623,13 +2623,13 @@ export default function App() {
                             setAdminTab(fallback);
                           }
                         }}
-                        className={`text-left rounded-xl p-2.5 border transition-all cursor-pointer ${isSel ? 'bg-emerald-500/10 border-emerald-500 text-white shadow-md' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-850'}`}
+                        className={`text-left rounded-xl p-2.5 border transition-all cursor-pointer ${isSel ? 'bg-brand-navy border-brand-navy text-brand-green shadow-md' : 'bg-white/40 border-slate-300/80 text-slate-800 hover:border-slate-400 hover:bg-white/60'}`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-black truncate">{role.name}</span>
-                          {isSel && <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
+                          {isSel && <div className="h-1.5 w-1.5 rounded-full bg-brand-green animate-ping" />}
                         </div>
-                        <span className="text-[8px] opacity-60 block mt-0.5 truncate uppercase tracking-widest">Scope: {role.name === 'Super Admin' ? 'Omni (*)' : role.scope.split(',')[0]}</span>
+                        <span className="text-[8px] opacity-75 block mt-0.5 truncate uppercase tracking-widest font-bold">Scope: {role.name === 'Super Admin' ? 'Omni (*)' : role.scope.split(',')[0]}</span>
                       </button>
                     );
                   })}
@@ -5768,25 +5768,25 @@ export default function App() {
 
                     <div className="lg:col-span-4 space-y-8">
                       {/* Corporate benefits card */}
-                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white text-left space-y-4 relative overflow-hidden">
+                      <div className="bg-slate-900 border border-slate-300 rounded-3xl p-6 text-brand-navy text-left space-y-4 relative overflow-hidden">
                         <div className="absolute top-0 right-0 h-32 w-32 bg-[#c82a5c] rounded-full filter blur-2xl opacity-20 pointer-events-none" />
                         
-                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ffff00] font-sans">Mart.OS Corporate perks</div>
-                        <h4 className="text-lg font-black text-white font-sans">Enterprise provisioning benefits package</h4>
+                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#4c0519] font-sans">Mart.OS Corporate perks</div>
+                        <h4 className="text-lg font-black text-brand-navy font-sans">Enterprise provisioning benefits package</h4>
                         
-                        <ul className="space-y-3.5 text-xs text-slate-350 list-disc list-inside font-medium leading-relaxed font-sans">
+                        <ul className="space-y-3.5 text-xs text-slate-850 list-disc list-inside font-semibold leading-relaxed font-sans">
                           <li>Dedicated account manager & SLA coordinator.</li>
                           <li>No-minimum threshold on replacement delivery runs.</li>
                           <li>Guaranteed cold chain fresh produce priority.</li>
                           <li>Custom pricing discount tier matrices tied to net volume.</li>
                         </ul>
 
-                        <div className="border-t border-slate-800 pt-4 text-center">
+                        <div className="border-t border-slate-300 pt-4 text-center">
                           <button
                             onClick={() => {
                               alert("Sample supply calendar set. Recurring dispatchers activated for Mumbai office BKC cluster.");
                             }}
-                            className="bg-white hover:bg-slate-50 text-slate-900 font-sans font-black uppercase tracking-wider text-[10px] w-full py-2.5 rounded-xl cursor-pointer"
+                            className="bg-brand-navy hover:bg-slate-800 text-white font-sans font-black uppercase tracking-wider text-[10px] w-full py-2.5 rounded-xl cursor-pointer"
                           >
                             📅 Activate Supply Calendar Planner
                           </button>
@@ -7351,18 +7351,18 @@ export default function App() {
             {adminTab === 'rbac_security' && (
               <div className="space-y-8 animate-in fade-in duration-200 text-left">
                 {/* Header overview */}
-                <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-8 space-y-4">
+                <div className="bg-slate-900 border border-slate-300 text-brand-navy rounded-3xl p-8 space-y-4">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Secured Cyber Operations</span>
-                      <h3 className="text-3xl font-black text-white mt-1">Mart.OS Cybersecurity Terminal</h3>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-950">Secured Cyber Operations</span>
+                      <h3 className="text-3xl font-black text-brand-navy mt-1">Mart.OS Cybersecurity Terminal</h3>
                     </div>
-                    <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest font-mono">TLS Encryption Standard v1.3</span>
+                    <div className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl px-4 py-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-700 animate-ping" />
+                      <span className="text-xs font-bold text-emerald-950 uppercase tracking-widest font-mono">TLS Encryption Standard v1.3</span>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
+                  <p className="text-sm text-slate-850 max-w-4xl leading-relaxed font-semibold">
                     Mart.OS is built with enterprise cyber defense strategies including active JWT cryptographical validation, multi-factor token authentication, immutable transactional ledgers, device profile login trackers and machine learning fraud analysis gauges.
                   </p>
                 </div>
