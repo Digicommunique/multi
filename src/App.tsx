@@ -351,11 +351,7 @@ export default function App() {
 
   // --- DYNAMIC PASSCODES & SECURITY MANAGEMENT (ADMIN EDITABLE) ---
   const [rolePins, setRolePins] = useState<Record<string, { pin: string; id: string; authMethod: 'pin' | 'otp' | 'social_direct' }>>(() => {
-    const saved = localStorage.getItem('martly_role_pins');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return {
+    const defaultPins = {
       'Super Admin': { pin: '12345', id: 'ADMIN-CORE-001', authMethod: 'pin' },
       'Corporate Admin': { pin: '12345', id: 'CORP-CENTRAL-002', authMethod: 'pin' },
       'Branch Manager': { pin: '12345', id: 'BRANCH-BKC-003', authMethod: 'pin' },
@@ -367,6 +363,17 @@ export default function App() {
       'CRM Executive': { pin: '12345', id: 'CRM-DISCOUNT-009', authMethod: 'pin' },
       'Customer': { pin: '1234', id: 'CUST-RAJESH-982', authMethod: 'social_direct' }
     };
+    const saved = localStorage.getItem('martly_role_pins');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...defaultPins,
+          ...parsed
+        };
+      } catch (e) {}
+    }
+    return defaultPins;
   });
 
   const updateRolePin = (role: string, newPin: string, method?: 'pin' | 'otp' | 'social_direct') => {
@@ -1315,6 +1322,33 @@ export default function App() {
                         <UserCheck className="h-4 w-4" />
                         <span>VERIFY PROTOCOL & SIGN IN</span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm("Reset all user/admin panel login credentials to factory defaults?")) {
+                            localStorage.removeItem('martly_role_pins');
+                            const defaultPins = {
+                              'Super Admin': { pin: '12345', id: 'ADMIN-CORE-001', authMethod: 'pin' },
+                              'Corporate Admin': { pin: '12345', id: 'CORP-CENTRAL-002', authMethod: 'pin' },
+                              'Branch Manager': { pin: '12345', id: 'BRANCH-BKC-003', authMethod: 'pin' },
+                              'Cashier': { pin: '12345', id: 'CASH-REG-004', authMethod: 'pin' },
+                              'Warehouse Staff': { pin: '12345', id: 'WH-BKC-005', authMethod: 'pin' },
+                              'Delivery Rider': { pin: '12345', id: 'RIDER-881', authMethod: 'pin' },
+                              'Vendor': { pin: '12345', id: 'VEND-BOMBAYAGRO', authMethod: 'pin' },
+                              'Accountant': { pin: '12345', id: 'ACC-LEDGER-008', authMethod: 'pin' },
+                              'CRM Executive': { pin: '12345', id: 'CRM-DISCOUNT-009', authMethod: 'pin' },
+                              'Customer': { pin: '1234', id: 'CUST-RAJESH-982', authMethod: 'social_direct' }
+                            };
+                            setRolePins(defaultPins);
+                            setLoginPasscode('');
+                            alert("✅ System security PINs have been restored to default values.\n\nAll operational dashboards can now be entered using passcode \"12345\".");
+                          }
+                        }}
+                        className="col-span-12 py-1 text-[8.5px] font-bold text-slate-500 hover:text-rose-450 hover:underline transition-all font-mono tracking-widest text-center cursor-pointer mt-1"
+                      >
+                        ⚠️ RESET ALL PINS TO SYSTEM DEFAULT
+                      </button>
                     </div>
 
                   </div>
@@ -1474,8 +1508,8 @@ export default function App() {
                           <p className="text-[10px] text-slate-350 leading-relaxed mt-1 font-semibold line-clamp-2">
                             {role.desc}
                           </p>
-                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-indigo-300 pt-1">
-                            <span>Admin Key Required</span>
+                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-indigo-300 pt-1 border-t border-white/5">
+                            <span>PIN CODE: <strong className="text-emerald-400 font-mono font-bold select-all">{rolePins[role.name]?.pin || '12345'}</strong></span>
                             <span className="group-hover:translate-x-1 transition-transform font-bold">Unlock Node &gt;&gt;</span>
                           </div>
                         </div>
@@ -1496,19 +1530,25 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Loaded Back-Office ${role.name} profile.`]);
                           }}
-                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm ${
+                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm flex flex-col justify-between ${
                             loginSelectedRole === role.name 
                               ? 'bg-gradient-to-tr from-teal-950 to-emerald-955 border-teal-650 shadow-xl ring-2 ring-teal-500/10' 
                               : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
-                          <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
-                            {role.name}
-                          </span>
-                          <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
-                          <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
-                            {role.desc}
-                          </p>
+                          <div>
+                            <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
+                              {role.name}
+                            </span>
+                            <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
+                            <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
+                              {role.desc}
+                            </p>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-teal-300 pt-1.5 border-t border-white/5">
+                            <span>PIN: <strong className="text-emerald-400 font-mono font-bold select-all">{rolePins[role.name]?.pin || '12345'}</strong></span>
+                            <span className="group-hover:translate-x-0.5 transition-transform font-bold">Launch &gt;</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1527,19 +1567,25 @@ export default function App() {
                             setLoginSelectedRole(role.name);
                             setAuthHandshakeLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ID_STATION: Selected Frontline ${role.name} station.`]);
                           }}
-                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm ${
+                          className={`group rounded-2xl border p-3.5 text-left cursor-pointer transition-all select-none relative shadow-sm flex flex-col justify-between ${
                             loginSelectedRole === role.name 
                               ? 'bg-gradient-to-tr from-emerald-955 to-teal-955 border-emerald-650 shadow-xl ring-2 ring-emerald-500/10' 
                               : 'bg-slate-950 border-slate-900/80 hover:border-slate-800'
                           }`}
                         >
-                          <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
-                            {role.name}
-                          </span>
-                          <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
-                          <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
-                            {role.desc}
-                          </p>
+                          <div>
+                            <span className={`rounded font-black text-[8px] uppercase px-1.5 py-0.5 ${role.badgeColor} block w-fit mb-2`}>
+                              {role.name}
+                            </span>
+                            <h4 className="text-xs font-extrabold text-white leading-tight">{role.name}</h4>
+                            <p className="text-[9.5px] text-slate-350 leading-normal mt-1 font-semibold line-clamp-3">
+                              {role.desc}
+                            </p>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-emerald-300 pt-1.5 border-t border-white/5">
+                            <span>PIN: <strong className="text-emerald-400 font-mono font-bold select-all">{rolePins[role.name]?.pin || '12345'}</strong></span>
+                            <span className="group-hover:translate-x-0.5 transition-transform font-bold">Open &gt;</span>
+                          </div>
                         </div>
                       ))}
                     </div>
