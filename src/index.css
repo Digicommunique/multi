@@ -8,6 +8,18 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+@utility bg-header-gradient {
+  background: radial-gradient(circle at center, #c82a5c 0%, #4c0519 100%);
+}
+
+@utility bg-new-banner-gradient {
+  background: linear-gradient(135deg, #b5e4e2 0%, #6ab3c7 50%, #56a5bc 100%);
+}
+
+@utility bg-footer-gradient {
+  background: radial-gradient(circle at center, #f5beb2  0%, #e08370 100%);
+}
+
 @layer base {
   body {
     @apply bg-slate-50 font-sans antialiased text-slate-900;

@@ -29,4 +29,8 @@ export const PRODUCTS = [
   { id: "p10", name: "Dark Chocolate 70%", price: 299, image: "https://images.unsplash.com/photo-1511381939415-e44015466834?w=400&q=80", category: "cat-1", brand: "CocoaGolds", unit: "100g", stock: 75 },
   { id: "p11", name: "Wireless Headphones", price: 2499, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80", category: "cat-6", brand: "AudioZen", unit: "1pc", stock: 15 },
   { id: "p12", name: "Smart Watch S3", price: 5999, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80", category: "cat-6", brand: "TechCore", unit: "1pc", stock: 10 },
+  { id: "p13", name: "Hydrating Shampoo", price: 350, image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=400&q=80", category: "cat-5", brand: "SilkPro", unit: "400ml", stock: 40 },
+  { id: "p14", name: "Charcoal Toothpaste", price: 120, image: "https://images.unsplash.com/photo-1559594861-16383c899060?w=400&q=80", category: "cat-5", brand: "FreshMint", unit: "150g", stock: 85 },
+  { id: "p15", name: "Liquid Detergent", price: 499, image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&q=80", category: "cat-7", brand: "CleanMax", unit: "2L", stock: 25 },
+  { id: "p16", name: "Dishwash Gel Lemon", price: 105, image: "https://images.unsplash.com/photo-1622467827417-30230239634e?w=400&q=80", category: "cat-7", brand: "Sparkle", unit: "500ml", stock: 65 },
 ];
